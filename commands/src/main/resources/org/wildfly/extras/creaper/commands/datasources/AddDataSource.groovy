@@ -1,3 +1,7 @@
+import org.wildfly.extras.creaper.core.offline.NameSpaceVersion
+
+securityInElements = subsystemVersions.get("datasources").lessThen(new NameSpaceVersion(7, 2))
+
 // attributes of <datasource>
 datasourceAttrs = ['pool-name': poolName]
 if (nn(jta)) datasourceAttrs['jta'] = jta
@@ -45,9 +49,15 @@ def dsDefinition = {
         }
         if (nn(userName, password, securityDomain)) {
             securityAttrs = [:]
-            if (nn(userName)) securityAttrs['user-name'] = userName
-            if (nn(password)) securityAttrs['password'] = password
+            if (!securityInElements) {
+                if (nn(userName)) securityAttrs['user-name'] = userName
+                if (nn(password)) securityAttrs['password'] = password
+            }
             security(securityAttrs) {
+                if (securityInElements) {
+                    if (nn(userName)) 'user-name'(userName)
+                    if (nn(password)) 'password'(password)
+                }
                 if (nn(securityDomain)) 'security-domain'(securityDomain)
             }
         }

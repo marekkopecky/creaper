@@ -295,6 +295,8 @@ public class AddDataSource implements OnlineCommand, OfflineCommand {
                 .parameter("enableAfterCreation", enableAfterCreation)
                 .parameter("replaceExisting", replaceExisting)
 
+                .parameter("subsystemVersions", ctx.subsystemVersions)
+
                 .build();
 
         ctx.client.apply(transform);

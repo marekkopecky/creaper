@@ -6,6 +6,8 @@ import org.wildfly.extras.creaper.core.ServerVersion;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,6 +27,13 @@ final class OfflineServerVersion {
 
     private static final Pattern ROOT_XMLNS = Pattern.compile("[\"']urn:jboss:domain:(?:community:|preview:|experimental:)?(\\d+)\\.(\\d+)[\"']");
 
+    private static final Pattern DATASOURCE_XMLNS = Pattern.compile("[\"']urn:jboss:domain:datasources:(?:community:|preview:|experimental:)?(\\d+)\\.(\\d+)[\"']");
+
+    /**
+     * Content of configuration file
+     */
+    private static String content = null;
+
     private OfflineServerVersion() {
         // avoid instantiation
     }
@@ -36,7 +45,9 @@ final class OfflineServerVersion {
      */
     static ServerVersion discover(File configurationFile) throws IOException {
         // this is not entirely cheap, but it only occurs once, during an operation that is supposed to be costly anyway
-        String content = Files.toString(configurationFile, Charsets.UTF_8);
+        if (content == null) {
+            content = Files.toString(configurationFile, Charsets.UTF_8);
+        }
         Matcher matcher = ROOT_XMLNS.matcher(content);
         if (matcher.find()) {
             String majorStr = matcher.group(1);
@@ -72,5 +83,25 @@ final class OfflineServerVersion {
         }
 
         throw new IllegalArgumentException("Missing or bad schema version in configuration file " + configurationFile);
+    }
+
+    static Map<String, NameSpaceVersion> discoverSubsystems(File configurationFile) throws IOException {
+        // this is not entirely cheap, but it only occurs once, during an operation that is supposed to be costly anyway
+        if (content == null) {
+            content = Files.toString(configurationFile, Charsets.UTF_8);
+        }
+        Map<String, NameSpaceVersion> subsystemVersions = new HashMap<>();
+        Matcher matcher = DATASOURCE_XMLNS.matcher(content);
+        if (matcher.find()) {
+            String majorStr = matcher.group(1);
+            String minorStr = matcher.group(2);
+
+            int major = Integer.parseInt(majorStr);
+            int minor = Integer.parseInt(minorStr);
+
+            subsystemVersions.put("datasources", new NameSpaceVersion(major, minor));
+        }
+
+        return subsystemVersions;
     }
 }

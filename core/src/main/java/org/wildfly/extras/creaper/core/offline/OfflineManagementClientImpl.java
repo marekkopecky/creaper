@@ -7,12 +7,14 @@ import org.wildfly.extras.creaper.core.ServerVersion;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Map;
 
 final class OfflineManagementClientImpl implements OfflineManagementClient {
     private static final Logger log = Logger.getLogger(OfflineManagementClient.class);
 
     private final OfflineOptions options;
     private final ServerVersion version;
+    private final Map<String, NameSpaceVersion> subsystemVersions;
 
     OfflineManagementClientImpl(OfflineOptions options) throws IOException {
         File configurationFile = options.configurationFile;
@@ -22,6 +24,7 @@ final class OfflineManagementClientImpl implements OfflineManagementClient {
 
         this.options = options;
         this.version = OfflineServerVersion.discover(configurationFile);
+        this.subsystemVersions = OfflineServerVersion.discoverSubsystems(configurationFile);
     }
 
     @Override
@@ -42,7 +45,7 @@ final class OfflineManagementClientImpl implements OfflineManagementClient {
     @Override
     public void apply(Iterable<OfflineCommand> commands) throws CommandFailedException {
         try {
-            OfflineCommandContext ctx = new OfflineCommandContext(this, version);
+            OfflineCommandContext ctx = new OfflineCommandContext(this, version, subsystemVersions);
             for (OfflineCommand command : commands) {
                 log.infof("Applying command %s", command);
                 command.apply(ctx);
